@@ -5,31 +5,86 @@ This Helm chart deploys Canine - a Rails-based Kubernetes deployment platform.
 ## Prerequisites
 
 - Kubernetes 1.19+
-- Helm 3.2.0+
+- Helm 3.8+ (required for OCI registry support)
 - PV provisioner support in the underlying infrastructure (if using internal PostgreSQL)
 - External PostgreSQL database (if using external PostgreSQL provider)
 
+## Chart Repository
+
+This chart is automatically published to GitHub Container Registry (GHCR) via GitHub Actions when changes are pushed to the `main` or `master` branch.
+
+**Chart Location:** `oci://ghcr.io/<your-github-org>/helm-charts/canine`
+
+**Note:** Replace `<your-github-org>` with your GitHub organization or username in all examples below.
+
+The chart is versioned using semantic versioning as defined in `Chart.yaml`. Each push to the main branch triggers a CI/CD pipeline that:
+1. Lints the chart for errors
+2. Validates Kubernetes manifests
+3. Packages the chart
+4. Publishes it to GHCR
+
 ## Installation
 
+### Installing from GHCR (Recommended)
+
+The chart is available from GitHub Container Registry. To install:
+
+```bash
+# Add the GHCR Helm repository (replace <your-github-org> with your organization)
+helm repo add my-helm-charts oci://ghcr.io/<your-github-org>/helm-charts
+helm repo update
+
+# Install the chart
+helm install canine my-helm-charts/canine \
+  --namespace canine \
+  --create-namespace
+```
+
+#### Install with custom values
+
+```bash
+helm install canine my-helm-charts/canine \
+  --namespace canine \
+  --create-namespace \
+  -f custom-values.yaml
+```
+
+#### Install a specific version
+
+```bash
+helm install canine my-helm-charts/canine \
+  --version 0.1.0 \
+  --namespace canine \
+  --create-namespace
+```
+
+### Installing from Source (Development)
+
+For local development or testing changes:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd canine-helm
+
+# Add Bitnami repository (for PostgreSQL dependency)
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+
+# Update chart dependencies
+helm dependency update
+
+# Install from local directory
+helm install canine . --namespace canine --create-namespace
+```
+
 ### Add Bitnami repository (for PostgreSQL dependency)
+
+If using internal PostgreSQL, you'll need to add the Bitnami repository:
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
-```
-
-### Install the chart
-
-```bash
-# From the helm/canine directory
-helm dependency update
-helm install canine . --namespace canine --create-namespace
-```
-
-### Install with custom values
-
-```bash
-helm install canine . --namespace canine --create-namespace -f custom-values.yaml
 ```
 
 ## Configuration
@@ -172,6 +227,24 @@ helm uninstall canine --namespace canine
 
 ## Upgrading the Chart
 
+### Upgrade from GHCR
+
+```bash
+# Update the repository
+helm repo update my-helm-charts
+
+# Upgrade to latest version
+helm upgrade canine my-helm-charts/canine \
+  --namespace canine
+
+# Upgrade to specific version
+helm upgrade canine my-helm-charts/canine \
+  --version 0.1.0 \
+  --namespace canine
+```
+
+### Upgrade from Source
+
 ```bash
 helm upgrade canine . --namespace canine
 ```
@@ -189,6 +262,30 @@ image:
   pullPolicy: Never
 ```
 
+## Publishing the Chart
+
+The chart is automatically published to GHCR via GitHub Actions when you push changes to the `main` or `master` branch. The CI/CD pipeline:
+
+1. **Lints** the chart using `helm lint`
+2. **Validates** Kubernetes manifests using `kubectl --dry-run`
+3. **Packages** the chart using `helm package`
+4. **Publishes** to GHCR using Helm's native OCI support
+
+### Manual Publishing
+
+If you need to publish manually:
+
+```bash
+# Login to GHCR
+echo $GITHUB_TOKEN | helm registry login ghcr.io -u <username> --password-stdin
+
+# Package the chart
+helm package .
+
+# Push to GHCR
+helm push canine-<version>.tgz oci://ghcr.io/<organization>/helm-charts
+```
+
 ## Notes
 
 - The chart includes Bitnami's PostgreSQL as an optional dependency (enabled by default)
@@ -196,3 +293,4 @@ image:
 - Docker socket mounting is enabled by default for local mode operations
 - Persistence is enabled for internal PostgreSQL by default
 - The SECRET_KEY_BASE should be changed in production deployments
+- Charts are automatically versioned based on the `version` field in `Chart.yaml`
