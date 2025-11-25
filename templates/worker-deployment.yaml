@@ -1,3 +1,4 @@
+{{- if .Values.worker.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -37,7 +38,11 @@ spec:
           command: ["bundle", "exec", "good_job", "start"]
           env:
             - name: DATABASE_URL
+              {{- if .Values.databaseUrl }}
+              value: {{ .Values.databaseUrl | quote }}
+              {{- else }}
               value: "postgres://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ include "canine.fullname" . }}-postgresql:{{ .Values.postgresql.primary.service.ports.postgresql }}/{{ .Values.postgresql.auth.database }}"
+              {{- end }}
             - name: CANINE_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -75,3 +80,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}

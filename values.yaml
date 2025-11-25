@@ -96,7 +96,8 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 
-# PostgreSQL configuration (Bitnami PostgreSQL chart)
+# PostgreSQL configuration
+# Option 1: Use internal PostgreSQL (Bitnami chart)
 postgresql:
   enabled: true
   auth:
@@ -117,5 +118,10 @@ postgresql:
   initdbScripts:
     init.sql: |
       CREATE DATABASE IF NOT EXISTS canine_development;
-      GRANT ALL PRIVILEGES ON DATABASE canine_development TO postgres;
+      GRANT ALL PRIVILEGES ON DATABASE canine_development TO postgres
+
+# Option 2: Use external PostgreSQL provider
+# Set postgresql.enabled to false and provide databaseUrl
+# Example: postgres://username:password@host:5432/database
+databaseUrl: ""
 

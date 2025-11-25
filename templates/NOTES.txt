@@ -53,10 +53,18 @@
    
    # Check logs for the web application
    kubectl logs --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "canine.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -c {{ .Chart.Name }}
+   {{- if .Values.worker.enabled }}
    
    # Check logs for the background worker
    kubectl logs --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "canine.name" . }},app.kubernetes.io/component=worker" -c {{ .Chart.Name }}-worker
+   {{- end }}
+   {{- if .Values.autoscaling.enabled }}
+   
+   # Check Horizontal Pod Autoscaler status
+   kubectl get hpa --namespace {{ .Release.Namespace }} {{ include "canine.fullname" . }}
+   {{- end }}
 
+{{- if .Values.postgresql.enabled }}
 4. Database Access (if needed):
    ---------------------------
    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "canine.fullname" . }}-postgresql 5432:5432
@@ -66,6 +74,9 @@
    Password: {{ .Values.postgresql.auth.password }}
 
 5. Troubleshooting:
+{{- else }}
+4. Troubleshooting:
+{{- end }}
    ---------------
    # If pods are not starting, check events:
    kubectl describe pod --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "canine.name" . }}"
