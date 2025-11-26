@@ -16,11 +16,12 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
       pages: write
       id-token: write
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,34 +33,63 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
+      # -------------------------------------------------------------
+      # Fetch previous gh-pages/index.yaml safely
+      # -------------------------------------------------------------
       - name: Fetch existing index.yaml from gh-pages
         run: |
-          git fetch origin gh-pages:gh-pages 2>/dev/null || echo "gh-pages branch does not exist yet"
-          if git show origin/gh-pages:index.yaml > index.yaml 2>/dev/null; then
-            echo "Found existing index.yaml from gh-pages"
+          git fetch origin gh-pages:gh-pages 2>/dev/null || echo "gh-pages does not exist yet"
+
+          # Try retrieving previous index.yaml into index.old.yaml
+          if git show origin/gh-pages:index.yaml > index.old.yaml 2>/dev/null; then
+            if [ -s index.old.yaml ]; then
+              echo "Found existing non-empty index.yaml"
+            else
+              echo "index.yaml exists but is empty — removing"
+              rm -f index.old.yaml
+            fi
           else
-            echo "No existing index.yaml found, will create new one"
+            echo "No previous index.yaml found"
           fi
 
+      # -------------------------------------------------------------
+      # Install Helm
+      # -------------------------------------------------------------
       - name: Install Helm
         uses: azure/setup-helm@v4
         with:
-          version: 'latest'
+          version: latest
 
+      # -------------------------------------------------------------
+      # Update dependencies (if any)
+      # -------------------------------------------------------------
       - name: Run helm dependency update
         run: helm dependency update
 
+      # -------------------------------------------------------------
+      # Package chart
+      # -------------------------------------------------------------
       - name: Package chart
         run: helm package .
 
+      # -------------------------------------------------------------
+      # Create or merge Helm repo index
+      # -------------------------------------------------------------
       - name: Create Helm repository index
         run: |
-          if [ -f index.yaml ]; then
-            helm repo index . --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} --merge index.yaml
+          URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+
+          if [ -s index.old.yaml ]; then
+            echo "Merging with previous index.yaml"
+            helm repo index . --url "$URL" --merge index.old.yaml
           else
-            helm repo index . --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+            echo "Creating new index.yaml"
+            helm repo index . --url "$URL"
           fi
 
+      # -------------------------------------------------------------
+      # Publish to GitHub Pages
+      # -------------------------------------------------------------
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
@@ -68,4 +98,3 @@ jobs:
           keep_files: false
           destination_dir: .
           allow_empty_commit: true
-
