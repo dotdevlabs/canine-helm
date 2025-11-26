@@ -1,0 +1,71 @@
+name: Release Helm Chart
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Chart.yaml'
+      - 'values.yaml'
+      - 'templates/**'
+  release:
+    types:
+      - created
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Fetch existing index.yaml from gh-pages
+        run: |
+          git fetch origin gh-pages:gh-pages 2>/dev/null || echo "gh-pages branch does not exist yet"
+          if git show origin/gh-pages:index.yaml > index.yaml 2>/dev/null; then
+            echo "Found existing index.yaml from gh-pages"
+          else
+            echo "No existing index.yaml found, will create new one"
+          fi
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Run helm dependency update
+        run: helm dependency update
+
+      - name: Package chart
+        run: helm package .
+
+      - name: Create Helm repository index
+        run: |
+          if [ -f index.yaml ]; then
+            helm repo index . --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} --merge index.yaml
+          else
+            helm repo index . --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          fi
+
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          keep_files: false
+          destination_dir: .
+          allow_empty_commit: true
+

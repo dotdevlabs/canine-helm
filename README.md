@@ -11,31 +11,29 @@ This Helm chart deploys Canine - a Rails-based Kubernetes deployment platform.
 
 ## Chart Repository
 
-This chart is automatically published to GitHub Container Registry (GHCR) via GitHub Actions when changes are pushed to the `main` or `master` branch.
+This chart is automatically published to GitHub Pages via GitHub Actions when changes are pushed to the `main` branch or when a release is created.
 
-**Chart Location:** `oci://ghcr.io/<your-github-org>/helm-charts/canine`
-
-**Note:** Replace `<your-github-org>` with your GitHub organization or username in all examples below.
+**Chart Repository URL:** `https://dotdevlabs.github.io/canine-helm`
 
 The chart is versioned using semantic versioning as defined in `Chart.yaml`. Each push to the main branch triggers a CI/CD pipeline that:
-1. Lints the chart for errors
-2. Validates Kubernetes manifests
-3. Packages the chart
-4. Publishes it to GHCR
+1. Updates chart dependencies
+2. Packages the chart
+3. Creates/updates the Helm repository index
+4. Publishes it to GitHub Pages
 
 ## Installation
 
-### Installing from GHCR (Recommended)
+### Installing from GitHub Pages (Recommended)
 
-The chart is available from GitHub Container Registry. To install:
+The chart is available from GitHub Pages. To install:
 
 ```bash
-# Add the GHCR Helm repository (replace <your-github-org> with your organization)
-helm repo add my-helm-charts oci://ghcr.io/<your-github-org>/helm-charts
+# Add the Helm repository
+helm repo add canine-helm https://dotdevlabs.github.io/canine-helm
 helm repo update
 
 # Install the chart
-helm install canine my-helm-charts/canine \
+helm install canine canine-helm/canine \
   --namespace canine \
   --create-namespace
 ```
@@ -43,7 +41,7 @@ helm install canine my-helm-charts/canine \
 #### Install with custom values
 
 ```bash
-helm install canine my-helm-charts/canine \
+helm install canine canine-helm/canine \
   --namespace canine \
   --create-namespace \
   -f custom-values.yaml
@@ -52,7 +50,7 @@ helm install canine my-helm-charts/canine \
 #### Install a specific version
 
 ```bash
-helm install canine my-helm-charts/canine \
+helm install canine canine-helm/canine \
   --version 0.1.0 \
   --namespace canine \
   --create-namespace
@@ -227,18 +225,18 @@ helm uninstall canine --namespace canine
 
 ## Upgrading the Chart
 
-### Upgrade from GHCR
+### Upgrade from GitHub Pages
 
 ```bash
 # Update the repository
-helm repo update my-helm-charts
+helm repo update canine-helm
 
 # Upgrade to latest version
-helm upgrade canine my-helm-charts/canine \
+helm upgrade canine canine-helm/canine \
   --namespace canine
 
 # Upgrade to specific version
-helm upgrade canine my-helm-charts/canine \
+helm upgrade canine canine-helm/canine \
   --version 0.1.0 \
   --namespace canine
 ```
@@ -264,26 +262,35 @@ image:
 
 ## Publishing the Chart
 
-The chart is automatically published to GHCR via GitHub Actions when you push changes to the `main` or `master` branch. The CI/CD pipeline:
+The chart is automatically published to GitHub Pages via GitHub Actions when you:
+- Push changes to the `main` branch (if Chart.yaml, values.yaml, or templates change)
+- Create a new release
 
-1. **Lints** the chart using `helm lint`
-2. **Validates** Kubernetes manifests using `kubectl --dry-run`
-3. **Packages** the chart using `helm package`
-4. **Publishes** to GHCR using Helm's native OCI support
+The CI/CD pipeline:
+1. Updates chart dependencies using `helm dependency update`
+2. Packages the chart using `helm package`
+3. Creates/updates the Helm repository index using `helm repo index`
+4. Publishes to GitHub Pages using the `gh-pages` branch
 
 ### Manual Publishing
 
 If you need to publish manually:
 
 ```bash
-# Login to GHCR
-echo $GITHUB_TOKEN | helm registry login ghcr.io -u <username> --password-stdin
+# Update dependencies
+helm dependency update
 
 # Package the chart
 helm package .
 
-# Push to GHCR
-helm push canine-<version>.tgz oci://ghcr.io/<organization>/helm-charts
+# Create/update index
+helm repo index . --url https://dotdevlabs.github.io/canine-helm
+
+# Commit and push to gh-pages branch
+git checkout -b gh-pages
+git add *.tgz index.yaml
+git commit -m "Publish chart"
+git push origin gh-pages
 ```
 
 ## Notes
