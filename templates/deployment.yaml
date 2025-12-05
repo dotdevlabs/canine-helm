@@ -65,6 +65,8 @@ spec:
                   key: secret-key-base
             - name: ALLOWED_HOSTNAME
               value: "{{ .Values.canine.allowedHostname }}"
+            - name: BOOT_MODE
+              value: "{{ .Values.canine.bootMode }}"
           livenessProbe:
             httpGet:
               path: /up
