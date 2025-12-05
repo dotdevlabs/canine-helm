@@ -3,7 +3,7 @@ entries:
   canine:
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-26T22:21:49.288398479Z"
+    created: "2025-12-05T01:18:11.208056025Z"
     dependencies:
     - condition: postgresql.enabled
       name: postgresql
@@ -11,7 +11,7 @@ entries:
       version: 16.3.1
     description: The Helm chart for Canine - the easiest way to deploy apps to the
       cloud.
-    digest: 71031624333cfc573ac063390e76c407e5bb01f0048f5a833a886602334963bb
+    digest: 172209233d1ea44a0d825b3e06670b7d2e2ca5b745bfedbde7c6bd092ec4575c
     name: canine
     type: application
     urls:
@@ -30,7 +30,7 @@ entries:
       licenses: Apache-2.0
     apiVersion: v2
     appVersion: 17.2.0
-    created: "2025-11-26T22:21:49.29295667Z"
+    created: "2025-12-05T01:18:11.21253725Z"
     dependencies:
     - name: common
       repository: oci://registry-1.docker.io/bitnamicharts
@@ -59,4 +59,4 @@ entries:
     urls:
     - https://dotdevlabs.github.io/canine-helm/charts/postgresql-16.3.1.tgz
     version: 16.3.1
-generated: "2025-11-26T22:21:49.280829443Z"
+generated: "2025-12-05T01:18:11.199950472Z"
